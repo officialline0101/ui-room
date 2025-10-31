@@ -1266,7 +1266,7 @@ function toISODateTimeLocal(dayStr, timeStr) {
     return `${dayStr}T${timeStr}`;
 }
 
-// 日付セレクト：今日から 'days' 日ぶんの候補を作る（日曜は除外）
+// 日付セレクト：今日から 'days' 日ぶんの候補を作る（月曜は除外）
 function buildDateOptions(selectEl, days = 120, startDate = new Date()) {
     const d = new Date(startDate.getFullYear(), startDate.getMonth(), startDate.getDate());
     selectEl.innerHTML = '<option value="" disabled selected>日付を選択</option>';
@@ -1274,8 +1274,8 @@ function buildDateOptions(selectEl, days = 120, startDate = new Date()) {
     for (let i = 0; i < days; i++) {
         const wd = d.getDay(); // 0=日曜 … 6=土曜
 
-        // ★日曜(0)はスキップ
-        if (wd !== 0) {
+        // ★月曜(1)はスキップ
+        if (wd !== 1) {
             const y = d.getFullYear();
             const m = pad(d.getMonth() + 1);
             const day = pad(d.getDate());
@@ -1294,29 +1294,17 @@ function buildDateOptions(selectEl, days = 120, startDate = new Date()) {
 
 // 曜日ごとの営業時間設定（0=日曜, 1=月曜, …, 6=土曜）
 const WEEKLY_HOURS = {
-    0: null,               // 日曜は営業なし（スキップ済み）
-    1: { start: 9, end: 18 }, // 月曜 09:00〜18:30
-    2: { start: 9, end: 18 }, // 火曜
-    3: { start: 9, end: 18 }, // 水曜
-    4: { start: 9, end: 18 }, // 木曜
-    5: { start: 9, end: 18 }, // 金曜
-    6: { start: 9, end: 13 }  // 土曜 09:00〜13:00
+    0: { start: 11, end: 22 }, // 日曜 11:00〜22:00
+    1: null,                   // 月曜はスキップ（営業なし）
+    2: { start: 11, end: 22 }, // 火曜
+    3: { start: 11, end: 22 }, // 水曜
+    4: { start: 11, end: 22 }, // 木曜
+    5: { start: 11, end: 22 }, // 金曜
+    6: { start: 11, end: 22 }  // 土曜
 };
 
-// 指定曜日の12:00〜の休憩帯を除外（上限を含む）
+// 休憩帯設定（必要に応じて調整）今回はなしにしておく
 function isBlockedTime(weekday, h, m) {
-    const minutes = h * 60 + m;
-
-    // 平日（月〜金＝1..5）：12:00 <= t <= 13:30
-    if (weekday >= 1 && weekday <= 5) {
-        if (minutes >= 12 * 60 && minutes <= 13 * 60 + 30) return true;
-    }
-
-    // 土曜（6）：12:00 <= t <= 13:00
-    if (weekday === 6) {
-        if (minutes >= 12 * 60 && minutes <= 13 * 60) return true;
-    }
-
     return false;
 }
 
@@ -1324,18 +1312,17 @@ function isBlockedTime(weekday, h, m) {
 function buildHalfHourOptions(selectEl, weekday) {
     selectEl.innerHTML = '<option value="" disabled selected>時間を選択</option>';
 
-    // 日曜は営業時間なし
-    if (weekday === 0) return;
+    // 月曜は営業時間なし
+    if (weekday === 1) return;
 
     const { start, end } = WEEKLY_HOURS[weekday] || { start: 0, end: 0 };
 
     for (let h = start; h <= end; h++) {
         for (const m of [0, 30]) {
-            // ★休憩帯はスキップ
             if (isBlockedTime(weekday, h, m)) continue;
 
-            // 終了時間の30分後は除外（例：18:30が最終）
-            if (h === end && m > 30) continue;
+            // 終了時間の30分後は除外（例：22:00が最終）
+            if (h === end && m > 0) continue;
 
             const hh = pad(h);
             const mm = pad(m);
@@ -1347,7 +1334,6 @@ function buildHalfHourOptions(selectEl, weekday) {
     }
 }
 
-// 既存の updateHiddenAndPlaceholder にこの1行を追加（表示用更新）
 function updateHiddenAndPlaceholder(baseId) {
     const day = document.getElementById(`${baseId}_day`).value;
     const time = document.getElementById(`${baseId}_time`).value;
@@ -1355,13 +1341,11 @@ function updateHiddenAndPlaceholder(baseId) {
     const ph = document.getElementById(`placeholder${baseId.slice(-1)}`);
 
     hidden.value = day && time ? `${day}T${time}` : "";
-
     if (ph) ph.style.display = hidden.value ? 'none' : '';
 
     if (typeof updateDisplayInfo === 'function') updateDisplayInfo();
 }
 
-// 編集時の復元処理
 function restoreIfAny(baseId) {
     const hidden = document.getElementById(baseId);
     if (!hidden.value) return;
