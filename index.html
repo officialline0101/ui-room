@@ -1188,11 +1188,6 @@
                 ? `<span style="color:#0c0c0c;"><strong>オプション</strong></span><br>・${irradiationsCount.split(', ').join('<br>・')}`
                 : '・オプション無し';
 
-            let totalMinutes = selectedMenuTime + selectedirradiationsTime;
-            let hours = Math.floor(totalMinutes / 60);
-            let minutes = totalMinutes % 60;
-            let totalTimeText = `<span style="color:#0c0c0c;"><strong>所要時間</strong></span>：${hours > 0 ? hours + '時間' : ''}${minutes}分`;
-
             const selectedDateText = selectedFullDate ? `<span style="color:#0c0c0c;"><strong>希望日時</strong></span>：${selectedFullDate}` : '・日時が未選択です';
 
             // 修正ボタン付きのHTMLを作成（お名前・電話番号の表示なし）
@@ -1205,10 +1200,6 @@
         <div class="info-row">
             <p>${irradiationsText}</p>
             <button class="edit-button" onclick="scrollToElement('course')">修正</button>
-        </div>
-        <hr>
-        <div class="info-row">
-            <p>${totalTimeText}</p>
         </div>
         <hr>
         <div class="info-row">
